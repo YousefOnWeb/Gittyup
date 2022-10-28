@@ -93,8 +93,12 @@ public:
     });
 
     git::RepositoryNotifier *notifier = repo.notifier();
-    connect(notifier, &git::RepositoryNotifier::referenceUpdated, this,
-            &CommitModel::resetReference);
+    connect(notifier, &git::RepositoryNotifier::referenceUpdated,
+            [this](const git::Reference &ref) {
+              mSuppressResetWalker = true;
+              resetReference(ref);
+              mSuppressResetWalker = false;
+            });
     connect(notifier, &git::RepositoryNotifier::workdirChanged,
             [this] { resetReference(mRef); });
 
@@ -154,7 +158,7 @@ public:
 
   void setReference(const git::Reference &ref) {
     mRef = ref;
-    if (mSuppressResetWalker) {
+    if (!mSuppressResetWalker) {
       resetWalker();
     }
   }
@@ -169,7 +173,9 @@ public:
     if (!ref.isValid() || ref.isHead())
       startStatus();
 
-    // resetWalker();
+    if (!mSuppressResetWalker) {
+      resetWalker();
+    }
   }
 
   void resetWalker() {
