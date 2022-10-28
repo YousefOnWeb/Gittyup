@@ -150,9 +150,13 @@ public:
     resetWalker();
   }
 
+  void suppressResetWalker(bool suppress) { mSuppressResetWalker = suppress; }
+
   void setReference(const git::Reference &ref) {
     mRef = ref;
-    resetWalker();
+    if (mSuppressResetWalker) {
+      resetWalker();
+    }
   }
 
   void resetReference(const git::Reference &ref) {
@@ -546,6 +550,7 @@ private:
   QList<Parent> mParents;
 
   // walker settings
+  bool mSuppressResetWalker{false};
   bool mRefsAll = true;
   bool mSortDate = true;
   bool mCleanStatus = true;
@@ -1266,6 +1271,10 @@ bool CommitList::selectRange(const QString &range, const QString &file,
 
   selectIndexes(selection, file, spontaneous);
   return true;
+}
+
+void CommitList::suppressResetWalker(bool suppress) {
+  static_cast<CommitModel *>(mModel)->suppressResetWalker(suppress);
 }
 
 void CommitList::resetSettings() {
