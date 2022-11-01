@@ -50,6 +50,7 @@ public:
   bool selectRange(const QString &range, const QString &file = QString(),
                    bool spontaneous = false);
   void suppressResetWalker(bool suppress);
+  bool isSuppressResetWalker();
 
   void resetSettings();
 

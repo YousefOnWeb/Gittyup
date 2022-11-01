@@ -72,6 +72,10 @@ private:
   bool mCanceled = false;
 };
 
+/*!
+ * \brief The CommitModel class
+ * Model showing all commits as timeline
+ */
 class CommitModel : public QAbstractListModel {
   Q_OBJECT
 
@@ -156,6 +160,8 @@ public:
 
   void suppressResetWalker(bool suppress) { mSuppressResetWalker = suppress; }
 
+  bool isSuppressResetWalker() { return mSuppressResetWalker; }
+
   void setReference(const git::Reference &ref) {
     mRef = ref;
     if (!mSuppressResetWalker) {
@@ -175,6 +181,8 @@ public:
 
     if (!mSuppressResetWalker) {
       resetWalker();
+    } else {
+
     }
   }
 
@@ -195,7 +203,7 @@ public:
         mParents.append(Parent(mRef.target(), nextColor(), true));
       }
 
-      mRows.append(Row(git::Commit(), row));
+      mRows.append(Row(git::Commit(), row)); // Uncommitted changes
     }
 
     // Begin walking commits.
@@ -563,6 +571,10 @@ private:
   bool mGraphVisible = true;
 };
 
+/*!
+ * \brief The ListModel class
+ * Used to show a list of commits. This is used when a filter is used
+ */
 class ListModel : public QAbstractListModel {
 public:
   ListModel(QObject *parent = nullptr) : QAbstractListModel(parent) {}
@@ -1181,8 +1193,11 @@ void CommitList::cancelStatus() {
 }
 
 void CommitList::setReference(const git::Reference &ref) {
+  //storeSelection(); // If it will not be called because resetWalker was suppressed
   static_cast<CommitModel *>(mModel)->setReference(ref);
-  updateModel();
+  //restoreSelection(); // If it will not be called because resetWalker was suppressed
+  if (!isSuppressResetWalker())
+    updateModel();
   setFocus();
 }
 
@@ -1281,6 +1296,10 @@ bool CommitList::selectRange(const QString &range, const QString &file,
 
 void CommitList::suppressResetWalker(bool suppress) {
   static_cast<CommitModel *>(mModel)->suppressResetWalker(suppress);
+}
+
+bool CommitList::isSuppressResetWalker() {
+    return static_cast<CommitModel *>(mModel)->isSuppressResetWalker();
 }
 
 void CommitList::resetSettings() {
@@ -1562,7 +1581,10 @@ void CommitList::leaveEvent(QEvent *event) {
   QListView::leaveEvent(event);
 }
 
-void CommitList::storeSelection() { mSelectedRange = selectedRange(); }
+void CommitList::storeSelection() {
+    mSelectedRange = selectedRange();
+    qDebug() << mSelectedRange;
+}
 
 void CommitList::restoreSelection() {
   // Restore selection.
